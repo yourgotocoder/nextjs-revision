@@ -1,4 +1,5 @@
 import React from "react";
+import { MongoClient, ObjectId } from "mongodb";
 import MeetupDetail from "../../components/meetups/MeetupDetail";
 
 const SingleMeetupPage = (props) => {
@@ -12,35 +13,46 @@ const SingleMeetupPage = (props) => {
     );
 };
 
-export function getStaticProps(context) {
+export async function getStaticProps(context) {
     const meetupId = context.params.meetupId;
+    const client = await MongoClient.connect(
+        "mongodb+srv://sudu:keYRing123@mean.r3iag.mongodb.net/meetupsdata?retryWrites=true&w=majority"
+    );
+    if (client) {
+        console.log(`Connected to db`);
+    }
+    const db = client.db();
+    const meetupsCollection = db.collection("meetups");
+    const meetup = await meetupsCollection.findOne({ _id: ObjectId(meetupId) });
+    console.log(meetup);
+    client.close();
     return {
         props: {
             meetupData: {
-                id: meetupId,
-                title: "A title",
-                image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Everest_North_Face_toward_Base_Camp_Tibet_Luca_Galuzzi_2006.jpg/1920px-Everest_North_Face_toward_Base_Camp_Tibet_Luca_Galuzzi_2006.jpg",
-                description: "A description",
-                address: "A address",
+                id: meetup._id.toString(),
+                title: meetup.title,
+                address: meetup.address,
+                description: meetup.description,
+                image: meetup.image,
             },
         },
     };
 }
 
-export function getStaticPaths(context) {
+export async function getStaticPaths(context) {
+    const client = await MongoClient.connect(
+        "mongodb+srv://sudu:keYRing123@mean.r3iag.mongodb.net/meetupsdata?retryWrites=true&w=majority"
+    );
+    const db = client.db();
+
+    const meetupsCollection = db.collection("meetups");
+    const meetups = await meetupsCollection.find({}, { _id: 1 }).toArray();
+    const params = meetups.map((meetup) => ({
+        params: { meetupId: meetup._id.toString() },
+    }));
+    client.close();
     return {
-        paths: [
-            {
-                params: {
-                    meetupId: "m1",
-                },
-            },
-            {
-                params: {
-                    meetupId: "m2",
-                },
-            },
-        ],
+        paths: params,
         fallback: false,
     };
 }
