@@ -22,7 +22,15 @@ const HomePage = (props) => {
     return <MeetupList meetups={props.meetups}></MeetupList>;
 };
 
-export function getStaticProps() {
+// export function getStaticProps() {
+//     return {
+//         props: {
+//             meetups: DUMMY_MEETUPS,
+//         },
+//     };
+// }
+
+export async function getServerSideProps(context) {
     return {
         props: {
             meetups: DUMMY_MEETUPS,
